@@ -4,7 +4,6 @@
     <xml name="requirements">
         <requirements>
             <requirement type="package" version="@VERSION@">kallisto</requirement>
-            <requirement type="package" version="0.39.2">bustools</requirement>
         </requirements>
     </xml>
     <xml name="citations">
