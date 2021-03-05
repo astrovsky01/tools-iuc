@@ -2,13 +2,16 @@
     <description>and overlaps in an assembly based on read depth</description>
     <macros>
         <token name="@TOOL_VERSION@">1.2.5</token>
-        <token name="@VERSION_SUFFIX@">0</token>
+        <token name="@VERSION_SUFFIX@">1</token>
     </macros>
     <requirements>
         <requirement type="package" version="@TOOL_VERSION@">purge_dups</requirement>
     </requirements>
     <command detect_errors="exit_code"><![CDATA[
         #if $function_select.functions == "purge_dups":
+            #if $function_select.input.is_of_type("paf"):
+                gzip $function_select.input &&
+            #end if
             purge_dups
             #if $function_select.coverage:
                 -c '$function_select.coverage'
@@ -43,7 +46,11 @@
             #if $function_select.max_extend:
                 -E $function_select.max_extend
             #end if
-            '$function_select.input' > dups.bed 2> purge_dups.log
+            #if $function_select.input.is_of_type("paf"):
+                '${function_select.input}.gz' > dups.bed 2> purge_dups.log
+            #else:
+                `${function_select.input}` > dups.bed 2> purge_dups.log
+            #end if
         #else if $function_select.functions == "split_fa":
             split_fa
             #if $function_select.split:
@@ -51,6 +58,9 @@
             #end if
             '$function_select.input' > split.fasta
         #else if $function_select.functions == "pbcstat":
+            #if $function_select.input.is_of_type("paf"):
+                gzip $function_select.input &&
+            #end if
             pbcstat
             #if $function_select.max_cov:
                 -M $function_select.max_cov
@@ -65,7 +75,11 @@
                 -l $function_select.flank
             #end if
             $function_select.primary_alignments
-            '$function_select.input'
+            #if $function_select.input.is_of_type("paf"):
+                '${function_select.input}.gz'
+            #else:
+                `${function_select.input}`
+            #end if
         #else if $function_select.functions == "ngscstat":
             ngscstat
             #if $function_select.min_align_qual:
@@ -123,45 +137,45 @@
                 <option value="get_seqs">obtain seqeuences after purging</option>
             </param>
             <when value="purge_dups">
-                <param name="input" type="data" format="paf" label="PAF input file"/>
-                <param name="coverage" type="data" format="tabular" optional="true" argument="-c" label="Base-level coverage file" />
+                <param name="input" type="data" format="paf,paf.gz" label="PAF input file"/>
+                <param name="coverage" type="data" format="tabular" label="Base-level coverage file" optional="true" argument="-c"/>
                 <param name="cutoffs" type="data" format="tabular" label ="Cutoffs file" optional="true" argument="-T"/>
-                <param name="min_bad" type="float" min="0" max="1" argument="-f" optional="true" label="Minimum fraction of haploid/diploid/bad/repetitive bases in a sequence" help="Default = 0.8"/>
+                <param name="min_bad" type="float" label="Minimum fraction of haploid/diploid/bad/repetitive bases in a sequence" min="0" max="1" argument="-f" optional="true" help="Default = 0.8"/>
                 <param name="min_align" type="integer" label="Minimum alignment score" argument="-a" optional="true"/>
                 <param name="min_match" type="integer" label="Minimum max match score" argument="-b" optional="true"/>
                 <param name="min_chain" label="Minimum matching bases for chaining" type="integer" argument="-m" optional="true"/>
                 <param name="max_gap" label="Maximum gap size for chaining" type="integer" argument="-M" optional="true"/>
                 <conditional name="double_chain">
-                    <param type="select" name="chaining_rounds" label="Rounds of chaining">
+                    <param type="select" name="chaining_rounds" label="2 rounds of chaining">
                         <option value="one">1 round</option>
                         <option value="two">2 rounds</option>
                     </param>
                     <when value="two">
-                        <param name="max_gap_2" argument="-G" optional="true" label="Maximum gap size for second round of chaining" type="integer"/>
+                        <param name="max_gap_2" label="Maximum gap size for second round of chaining" type="integer" argument="-G" optional="true"/>
                     </when>
                     <when value="one"/>
                 </conditional>
-                <param name="min_chain_score" argument="-l" optional="true" label="Minimum chaining score for a match" type="integer" />
-                <param name="max_extend" argument="-E" optional="true" label="Maximum extension for contig ends" type="integer" />
+                <param name="min_chain_score" label="Minimum chaining score for a match" type="integer" argument="-l" optional="true"/>
+                <param name="max_extend" label="Maximum extension for contig ends" type="integer" argument="-E" optional="true"/>
             </when>
             <when value="split_fa">
                 <param name="input" type="data" format="fasta" label="Base-level coverage file"/>
-                <param name="split" type="boolean" truevalue="-n" falsevalue="" checked="false" label="Base-level coverage file" />
+                <param name="split" type="boolean" label="Base-level coverage file" truevalue="-n" falsevalue="" checked="false"/>
             </when>
             <when value="pbcstat">
-                <param name="input" type="data" format="paf" label="PAF input file"/>
+                <param name="input" type="data" format="paf,paf.gz" label="PAF input file"/>
                 <param name="max_cov" type="integer" label="Maximum coverage" argument="-M" optional="true"/>
-                <param name="min_map_ratio" argument="-f" type="float" min="0" max="1" value="0" label="Minimum mapping length ratio"/>
-                <param name="min_map_qual" type="integer"  argument="-q" optional="true" label="Minimum mapping quality"/>
-                <param name="flank" type="integer" argument="-l" optional="true" label="Flanking space" />
-                <param name="primary_alignments" argument="-p" type="boolean" truevalue="-p" falsevalue="" checked="true" label="Use only primary alignments" />
+                <param name="min_map_ratio" type="float" min="0" max="1" value="0" label="Minimum mapping length ratio" argument="-f"/>
+                <param name="min_map_qual" type="integer"  argument="-q" label="Minimum mapping quality" optional="true"/>
+                <param name="flank" type="integer" argument="-l" label="Flanking space" optional="true"/>
+                <param name="primary_alignments" argument="-p" type="boolean" label="Use only primary alignments" truevalue="-p" falsevalue="" checked="true"/>
             </when>
             <when value="ngscstat">
                 <param name="input" type="data" format="bam" label="BAM input file"/>
-                <param name="min_align_qual" type="integer"  argument="-q" optional="true" label="Minimum alignment quality" />
-                <!-- Param exists in help text, but isn't actually part of the code. Maybe in the next release? -->
+                <param name="min_align_qual" type="integer"  argument="-q" label="Minimum alignment quality" optional="true"/>
+                <!-- Param exists in help text, but isn't actually part of the code. Maybe in the next release?sss -->
                 <!-- <param name="max_depth" type="integer" label="Maximum read depth" argument="-M" optional="true"/> -->
-                <param name="max_insert" type="integer"  argument="-L" optional="true" label="Maximum insert size"/>
+                <param name="max_insert" type="integer"  argument="-L" label="Maximum insert size" optional="true"/>
             </when>
             <when value="calcuts">
                 <param name="input" type="data" format="tabular" label="STAT input file"/>
@@ -169,7 +183,7 @@
                 <param name="low_depth" label="Lower bound for read depth" type="integer" argument="-l" optional="true"/>
                 <param name="transition" label="Transition between haploid and diploid" type="integer" argument="-m" optional="true"/>
                 <param name="upper_depth" label="Upper bound for read depth" type="integer" argument="-u" optional="true"/>
-                <param name="ploidy" argument="-d" type="select" label="Ploidy">
+                <param name="ploidy" label="Ploidy" type="select" argument="-d">
                     <option value="-d 0" selected="true">Diploid [0]</option>
                     <option value="-d 1">Haploid [1]</option>
                 </param>
@@ -177,13 +191,14 @@
             <when value="get_seqs">
                 <param name="fasta_input" type="data" format="fasta" label="Fasta input file"/>
                 <param name="bed_input" type="data" format="bed" label="Bed input file"/>
-                <param name="coverage" type="boolean" argument="-c" truevalue="-c" falsevalue="" checked="false" label="Keep high coverage contigs in the primary contig set"/>
-                <param name="haplotigs" type="boolean" argument="-a" truevalue="-a" falsevalue="" checked="false" label="Do not add prefix to haplotigs"/>
-                <param name="length" type="integer" argument="-l" optional="true" label="Minimum primary contig length" help="Default: 1000"/>
-                <param name="min_ratio" type="float" min="0" max="1" argument="-m" optional="true" label="Minimum ratio of remaining primary contig length to the original contig length"/>
-                <param name="end_trim" type="boolean" argument="-e" truevalue="-e" falsevalue="" checked="true" label="Trim end sequences" help="Only remove sequences at end of halplotigs If you also want to remove the duplications in the middle, set to false, however that may delete false positive duplications."/>
-                <param name="split" type="boolean" argument="-s" truevalue="-s" falsevalue="" checked="false" label="Split contigs"/>
-                <param name="min_gap" type="integer" argument="-g" optional="true" help="default=10k" label="Minimum gap size between duplications" />
+                <param name="coverage" type="boolean" label="Keep high coverage contigs in the primary contig set" argument="-c" truevalue="-c" falsevalue="" checked="false"/>
+                <param name="haplotigs" type="boolean" label="Do not add prefix to haplotigs" argument="-a" truevalue="-a" falsevalue="" checked="false"/>
+                <param name="length" type="integer" label="Minimum primary contig length" argument="-l" optional="true" help="Default: 1000"/>
+                <param name="min_ratio" label="Minimum ratio of remaining primary contig length to the original contig length" type="float" min="0" max="1" argument="-m" optional="true"/>
+                <param name="end_trim" type="boolean" label="Trim end sequences" argument="-e" truevalue="-e" falsevalue="" checked="true" help="Only remove sequences at end of halplotigs If you also want to remove the duplications in the middle, set to false, however that may delete false positive duplications."/>
+                <param name="split" type="boolean" label="Split contigs" argument="-s" truevalue="-s" falsevalue="" checked="false"/>
+                <param name="min_gap" type="integer" label="Minimum gap size between duplications" argument="-g" optional="true" help="default=10k"/>
+
             </when>
         </conditional>
     </inputs>
