@@ -1,0 +1,41 @@
+<tool id="katcomp" name="katcomp" version="@VERSION@+galaxy@VERSION_SUFFIX@" profile="21.05">
+    <expand macro="description"/>
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+    <expand macro="requirements"/>
+    <command detect_errors="exit_code"><![CDATA[
+        ln -s $data_1 'input1.ktab' &&
+        ln -s $data_2 'input2.ktab' &&
+        KatComp
+        @PLOTS@
+        @MEASURE@
+        @GRAPHS@
+        -T \${GALAXY_SLOTS:-4}
+        $pdf
+        'input1.ktab'
+        'ionput2.ktab'
+        output
+    ]]></command>
+    <inputs>
+        <param name="data_1" type="data" format="ktab" label="Kmer table input 1"/>
+        <param name="data_2" type="data" format="ktab" label="Kmer table input 2"/>
+        <expand macro="plots"/>
+        <expand macro="sizes"/>
+        <expand macro="pdf"/>
+        <expand macro="graphs2"/>
+    </inputs>
+    <outputs>
+        <collection name="outputs_png" type="list" label="${tool.name} on ${on_string}: png figures">
+            <filter>pdf != "--pdf"</filter>
+            <discover_datasets pattern="__name_and_ext__" directory="output" format="png"/>
+        </collection>
+        <collection name="outputs_pdf" type="list" label="${tool.name} on ${on_string}: pdf figures">
+            <filter>pdf</filter>
+            <discover_datasets pattern="__name_and_ext__" directory="output" format="pdf"/>
+        </collection>
+    </outputs>
+    <help><![CDATA[
+        TODO: Fill in help.
+    ]]></help>
+</tool>

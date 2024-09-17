@@ -1,0 +1,42 @@
+<tool id="happlot" name="happlot" version="@VERSION@+galaxy@VERSION_SUFFIX@" profile="21.05">
+    <expand macro="description"/>
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+    <expand macro="requirements"/>
+    <command detect_errors="exit_code"><![CDATA[
+        HAPplot 
+        @PLOTS@
+        $pdf
+        -T \${GALAXY_SLOTS:-4}
+        $maternal
+        $paternal
+        $assembly_1
+        #if $assembly_2:
+            $assembly_2
+        #end if
+        output
+    ]]></command>
+    <inputs>
+        <param name="maternal" type="data" format="ktab,hap" label="K-mer table"/>
+        <param name="paternal" type="data" format="ktab,hap" label="K-mer table"/>
+        <param name="assembly_1" type="data" format="fasta" label="Assembly of genome" help="Must be same genome as the K-mer table was generated from"/>
+        <param name="assembly_2" type="data" format="fasta" label="Additional assembly file" optional="true" help="Additional genome against which to compare"/>
+        <expand macro="plots"/>
+        <expand macro="pdf"/>
+    </inputs>
+    <outputs>
+        <collection name="outputs_png" type="list" label="${tool.name} on ${on_string}: png figures">
+            <filter>pdf != "--pdf"</filter>
+            <discover_datasets pattern="__name_and_ext__" directory="output" format="png"/>
+        </collection>
+        <collection name="outputs_pdf" type="list" label="${tool.name} on ${on_string}: pdf figures">
+            <filter>pdf</filter>
+            <discover_datasets pattern="__name_and_ext__" directory="output" format="pdf"/>
+        </collection>
+    </outputs>
+    <expand macro="citation"/>
+    <help><![CDATA[
+        TODO: Fill in help.
+    ]]></help>
+</tool>

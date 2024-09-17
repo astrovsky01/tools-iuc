@@ -1,0 +1,89 @@
+<tool id="merquryfk" name="MerquryFK" version="@VERSION@+galaxy@VERSION_SUFFIX@" profile="21.05">
+    <description>Merqury with fastk</description>
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+    <expand macro="requirements"/>
+    <command detect_errors="exit_code"><![CDATA[
+        ln -s $reads 'reads.ktab' &&
+        #if $analysis.type == "trio":
+            #set $maternal = 'mat.' + str($analysis.maternal.ext)
+            #set $maternal = 'pat.' + str($analysis.paternal.ext)
+            ln -s '$analysis.maternal' $maternal &&
+            ln -s '$analysis.paternal' $paternal &&
+        #end if
+        #set $assembly1 = 'asm1.' + str($assembly.asm1.ext)
+        ln -s '$assembly.asm1' $assembly1 &&
+        #if $assembly.phasing == "phased"
+            #set $assembly2 = 'asm2.' + str($assembly.asm2.ext)
+            ln -s '$assembly.asm2' $assembly2 &&
+        #end if
+        Merquryfk
+        @PLOTS@
+        @MEASURE@
+        @GRAPHS@
+        $pdf
+        -T \${GALAXY_SLOTS:-4}
+        $reads
+        #if $analysis.type == "trio":
+            $maternal
+            $paternal
+        #end if
+        $assembly1
+        #if $assembly.phasing == "phased"
+            $assembly2
+        $end if
+        output
+    ]]></command>
+    <inputs>
+        <param name="reads" type="data" format="ktab" label="Input reads"/>
+        <conditional name="analysis">
+            <param name="type" type="select" label="Individual analysis or trio?">
+                <option value="individual">Individual</option>
+                <option value="trio">Trio</option>
+            </param>
+            <when value="individual"/>
+            <when value="trio">
+                <param name="maternal" type="data" format="hap,ktab" label="Maternal reads"/>
+                <param name="paternal" type="data" format="hap,ktab" label="Paternal reads"/>
+            </when>
+        </conditional>
+        <conditional name="assembly">
+            <param name="phasing" type="select" label="Individual analysis or trio?">
+                <option value="individual">Single, unphased</option>
+                <option value="pased">Two-phased, haplotypic</option>
+            </param>
+            <when value="individual">
+                <param name="asm1" type="data" label="Assembly file" format='fast,fastq,fasta.gz,fastq.gz,bam,sam'/> 
+            </when>            
+            <when value="phased">
+                <param name="asm1" type="data" label="First haplotype file" format='fast,fastq,fasta.gz,fastq.gz,bam,sam' help="Use the same file format across both haplotypes"/> 
+                <param name="asm2" type="data" label="Second halplotype file" format='fast,fastq,fasta.gz,fastq.gz,bam,sam' help="Use the same file format across both haplotypes"/> 
+            </when>
+        </conditional>
+        <expand macro="plots"/>
+        <expand macro="sizes"/>
+        <expand macro="graphs"/>
+        <expand macro="pdf"/>
+    </inputs>
+    <outputs>
+        <collection name="outputs_png" type="list" label="${tool.name} on ${on_string}: png figures">
+            <filter>pdf != "--pdf"</filter>
+            <discover_datasets pattern="__name_and_ext__" directory="output" format="png"/>
+        </collection>
+        <collection name="outputs_pdf" type="list" label="${tool.name} on ${on_string}: pdf figures">
+            <filter>pdf</filter>
+            <discover_datasets pattern="__name_and_ext__" directory="output" format="pdf"/>
+        </collection>
+        <data name="quality_out" file="output.asm1.qv" format="tabular" label="${tool.name} on ${on_string}: Scaffold error and QV table"/>
+        <data name="bed_out" file="output.asm1_only.bed" format="bed" label="${tool.name} on ${on_string}: unsupported kmers"/>
+        <data name="all_qual_out" file="output.qv" format="tabular" label="${tool.name} on ${on_string}: Full assembly error and qv"/>
+        <data name="quality_out" file="output.asm1.qv" format="tabular" label="${tool.name} on ${on_string}: Error and QV table for each scaffold"/>
+        <data name="quality_out" file="output.asm1.qv" format="tabular" label="${tool.name} on ${on_string}: Error and QV table for each scaffold"/>
+        <data name="quality_out" file="output.asm1.qv" format="tabular" label="${tool.name} on ${on_string}: Error and QV table for each scaffold"/>
+
+    </outputs>
+    <help><![CDATA[
+        TODO: Fill in help.
+    ]]></help>
+</tool>

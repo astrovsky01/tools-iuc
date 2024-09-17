@@ -1,0 +1,40 @@
+<tool id="ploidyplot" name="ploidyplot" version="@VERSION@+galaxy@VERSION_SUFFIX@" profile="21.05">
+    <expand macro="description"/>
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+    <expand macro="requirements"/>
+    <command detect_errors="exit_code"><![CDATA[
+        ln -s $data 'input.ktab' &&
+        Ploidyplot
+        @PLOTS@
+        @GRAPHS@
+        $pdf
+        #if $count:
+            -e${count}
+        #end if
+        -T \${GALAXY_SLOTS:-4}
+        'input.ktab'
+        -o output
+    ]]></command>
+    <inputs>
+        <param name="data" type="data" format="ktab" label="Kmer table input 1"/>
+        <expand macro="plots"/>
+        <expand macro="pdf"/>
+        <expand macro="graphs2"/>
+        <param name="count" argument="-e" type="integer" label="Count threshold" min="1" optional="true" help="below this value, k-mers are considered erroneous"/>
+    </inputs>
+    <outputs>
+        <collection name="outputs_png" type="list" label="${tool.name} on ${on_string}: png figures">
+            <filter>pdf != "--pdf"</filter>
+            <discover_datasets pattern="__name_and_ext__" directory="output" format="png"/>
+        </collection>
+        <collection name="outputs_pdf" type="list" label="${tool.name} on ${on_string}: pdf figures">
+            <filter>pdf</filter>
+            <discover_datasets pattern="__name_and_ext__" directory="output" format="pdf"/>
+        </collection>
+    </outputs>
+    <help><![CDATA[
+        TODO: Fill in help.
+    ]]></help>
+</tool>

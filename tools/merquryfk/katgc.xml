@@ -1,0 +1,40 @@
+<tool id="katgc" name="katgc" version="@VERSION@+galaxy@VERSION_SUFFIX@" profile="21.05">
+    <expand macro="description"/>
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+    <expand macro="requirements"/>
+    <command detect_errors="exit_code"><![CDATA[
+        ln -s $data 'input.ktab' &&
+        KatGC
+        @PLOTS@
+        @MEASURE@
+        @GRAPHS@
+        $pdf
+        -T \${GALAXY_SLOTS:-4}
+        'input.ktab'
+        output
+    ]]></command>
+    <inputs>
+        <inputs>
+            <param name="data" type="data" format="ktab" label="Kmer table input 1"/>
+            <expand macro="plots"/>
+            <expand macro="sizes"/>
+            <expand macro="pdf"/>
+            <expand macro="graphs2"/>
+        </inputs>
+    </inputs>
+    <outputs>
+        <collection name="outputs_png" type="list" label="${tool.name} on ${on_string}: png figures">
+            <filter>pdf != "--pdf"</filter>
+            <discover_datasets pattern="__name_and_ext__" directory="output" format="png"/>
+        </collection>
+        <collection name="outputs_pdf" type="list" label="${tool.name} on ${on_string}: pdf figures">
+            <filter>pdf</filter>
+            <discover_datasets pattern="__name_and_ext__" directory="output" format="pdf"/>
+        </collection>
+    </outputs>
+    <help><![CDATA[
+        TODO: Fill in help.
+    ]]></help>
+</tool>

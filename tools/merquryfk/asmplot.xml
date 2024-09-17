@@ -1,0 +1,49 @@
+<tool id="asmplot" name="asmplot" version="@VERSION@+galaxy@VERSION_SUFFIX@" profile="21.05">
+    <expand macro="description"/>
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+    <expand macro="requirements"/>
+    <command detect_errors="exit_code"><![CDATA[
+        ASMplot
+        @PLOTS@
+        @MEASURE@
+        @GRAPHS@
+        $pdf
+        -T \${GALAXY_SLOTS:-4}
+        $reads
+        $assembly_1
+        #if $assembly_2:
+            $assembly_2
+        #end if
+        output
+    ]]></command>
+    <inputs>
+        <param name="reads" type="data" format="ktab" label="K-mer table"/>
+        <param name="assembly_1" type="data" format="fasta" label="Assembly of genome" help="Must be same genome as the K-mer table was generated from"/>
+        <param name="assembly_2" type="data" format="fasta" label="Additional assembly file" optional="true" help="Additional genome against which to compare"/>
+        <expand macro="plots"/>
+        <expand macro="sizes"/>
+        <expand macro="graphs"/>
+        <expand macro="pdf"/>
+    </inputs>
+    <outputs>
+        <collection name="outputs_png" type="list" label="${tool.name} on ${on_string}: png figures">
+            <filter>pdf != "--pdf"</filter>
+            <discover_datasets pattern="__name_and_ext__" directory="output" format="png"/>
+        </collection>
+        <collection name="outputs_pdf" type="list" label="${tool.name} on ${on_string}: pdf figures">
+            <filter>pdf</filter>
+            <dcd iscover_datasets pattern="__name_and_ext__" directory="output" format="pdf"/>
+        </collection>
+    </outputs>
+    <expand macro="citation"/>
+    <help><![CDATA[
+        This program looks at the spectra of the k-mers that:
+            (a) are in neither genome assembly file or the additional assembly file, 
+            (b) in genome assembly file but not the additional assembly file, 
+            (c) in the additional assembly file but not genome assembly file, and 
+            (d) in both genome assembly file and the additional assembly file. 
+        If the second assembly file is missing, then it looks at the spectra of the read k-mers that are and are not in the first assembly file. The legend is appropriately labeled.
+    ]]></help>
+</tool>
